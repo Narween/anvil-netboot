@@ -1,4 +1,5 @@
 #!ipxe
+# Démarrage réseau d'anvil (sources : GitHub release, GitHub raw, GitLab raw)
 # Démarrage réseau d'anvil via ZFSBootMenu (GRUB ne lit plus rpool, voir ghostland-infra/anvil/URGENCE-DEMARRAGE.md)
 # ZFSBootMenu v3.1.0 (OpenZFS 2.4.0, Linux 6.12), copie non modifiée de https://github.com/zbm-dev/zfsbootmenu/releases/tag/v3.1.0
 # zbm.prefer : pool par défaut ; spl.spl_hostid : hostid d'anvil (sinon import refusé) ; consoles : écran + SOL IPMI
@@ -13,6 +14,12 @@ boot || goto src2
 
 :src2
 set base https://raw.githubusercontent.com/Narween/anvil-netboot/main/zbm
+kernel ${base}/vmlinuz-bootmenu ${args} || goto src3
+initrd ${base}/initramfs-bootmenu.img || goto src3
+boot || goto src3
+
+:src3
+set base https://gitlab.com/Narween/anvil-netboot/-/raw/main/zbm
 kernel ${base}/vmlinuz-bootmenu ${args} || goto echec
 initrd ${base}/initramfs-bootmenu.img || goto echec
 boot || goto echec
