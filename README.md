@@ -9,4 +9,6 @@ plus lire son pool ZFS racine.
   Sources et licences (ZFSBootMenu : MIT ; noyau Linux : GPL-2.0 ; OpenZFS : CDDL) :
   https://github.com/zbm-dev/zfsbootmenu/releases/tag/v3.1.0
 
+Chaque fichier est signé (`*.sig`, CMS détaché) par l'autorité `anvil-netboot-ca.crt` (certificat public ; la clé privée n'est pas ici) ; iPXE refuse tout fichier non signé.
+
 Aucun secret ici : seul le hostid du serveur (non sensible) figure dans le script.

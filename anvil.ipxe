@@ -1,35 +1,35 @@
 #!ipxe
-# Démarrage réseau d'anvil (sources : GitHub release, GitHub raw, GitLab raw, git.gay raw)
 # Démarrage réseau d'anvil via ZFSBootMenu (GRUB ne lit plus rpool, voir ghostland-infra/anvil/URGENCE-DEMARRAGE.md)
 # ZFSBootMenu v3.1.0 (OpenZFS 2.4.0, Linux 6.12), copie non modifiée de https://github.com/zbm-dev/zfsbootmenu/releases/tag/v3.1.0
-# zbm.prefer : pool par défaut ; spl.spl_hostid : hostid d'anvil (sinon import refusé) ; consoles : écran + SOL IPMI
+# Sources : GitHub release, GitHub raw, GitLab raw, git.gay raw. Chaque fichier est vérifié par signature
+# (CMS, autorité « anvil netboot root CA » intégrée à iPXE) en plus du HTTPS.
+# zbm.prefer : pool par défaut ; spl.spl_hostid : hostid d'anvil ; consoles : écran + SOL IPMI
+
+imgtrust --permanent
 dhcp || echo pas de dhcp, on continue
 set args zbm.prefer=rpool zbm.timeout=5 spl.spl_hostid=0x000a0500 loglevel=4 console=tty0 console=ttyS1,115200n8
 
-:src1
-set base https://github.com/Narween/anvil-netboot/releases/download/zbm-v3.1.0
-kernel ${base}/vmlinuz-bootmenu ${args} || goto src2
-initrd ${base}/initramfs-bootmenu.img || goto src2
-boot || goto src2
+set n 1
+set src1 https://github.com/Narween/anvil-netboot/releases/download/zbm-v3.1.0
+set src2 https://raw.githubusercontent.com/Narween/anvil-netboot/main/zbm
+set src3 https://gitlab.com/Narween/anvil-netboot/-/raw/main/zbm
+set src4 https://git.gay/Narween/anvil-netboot/raw/branch/main/zbm
 
-:src2
-set base https://raw.githubusercontent.com/Narween/anvil-netboot/main/zbm
-kernel ${base}/vmlinuz-bootmenu ${args} || goto src3
-initrd ${base}/initramfs-bootmenu.img || goto src3
-boot || goto src3
+:essai
+iseq ${n} 5 && goto echec ||
+imgfree
+set base ${src${n}}
+echo Source ${n} : ${base}
+kernel --name zbm ${base}/vmlinuz-bootmenu ${args} || goto suivante
+imgverify zbm ${base}/vmlinuz-bootmenu.sig || goto suivante
+initrd --name initramfs-bootmenu.img ${base}/initramfs-bootmenu.img || goto suivante
+imgverify initramfs-bootmenu.img ${base}/initramfs-bootmenu.img.sig || goto suivante
+boot zbm || goto suivante
 
-:src3
-set base https://gitlab.com/Narween/anvil-netboot/-/raw/main/zbm
-kernel ${base}/vmlinuz-bootmenu ${args} || goto src4
-initrd ${base}/initramfs-bootmenu.img || goto src4
-boot || goto src4
-
-:src4
-set base https://git.gay/Narween/anvil-netboot/raw/branch/main/zbm
-kernel ${base}/vmlinuz-bootmenu ${args} || goto echec
-initrd ${base}/initramfs-bootmenu.img || goto echec
-boot || goto echec
+:suivante
+inc n
+goto essai
 
 :echec
-echo Echec du chargement de ZFSBootMenu : voir URGENCE-DEMARRAGE.md (rescue OVH + kexec)
+echo Echec du chargement de ZFSBootMenu sur les 4 sources : voir URGENCE-DEMARRAGE.md (rescue OVH + kexec)
 shell
